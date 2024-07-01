@@ -22,19 +22,20 @@ void draw_player(Player player){
 }
 
 void update_player(Player *player, Level level, int frames, float delta){
+    int mov_x = 0;
     if(IsKeyPressed(KEY_R)){
         player->rect.x = level.spawn_point.x;
         player->rect.y = level.spawn_point.y;
     }
     if(IsKeyDown(KEY_A)){
-        player->rect.x -= MOV_SPD;
+        mov_x -= MOV_SPD;
         if(frames % 16 == 0){
             if(player->state == WALKING) player->state = NORMAL;
             else player->state = WALKING;
         }
     }
     if(IsKeyDown(KEY_D)){
-        player->rect.x += MOV_SPD;
+        mov_x += MOV_SPD;
         if(frames % 16 == 0){
             if(player->state == WALKING) player->state = NORMAL;
             else player->state = WALKING;
@@ -58,6 +59,7 @@ void update_player(Player *player, Level level, int frames, float delta){
         player->speed += G * delta;
     }
     player->rect.y += player->speed * delta;
+    player->rect.x += mov_x;
 
     if(hit_obstacle){
     } else if(player->speed > G * delta){

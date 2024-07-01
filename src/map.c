@@ -17,7 +17,8 @@ void place_object(Object *objects, int *object_count, ObjectType type, Rectangle
 
 }
 
-#define place_tileq(type, x, y) place_tile(tiles, &tile_count, type, x, y)
+#define place_tileq_bg(type, x, y) place_tile(bg_tiles, &bg_tile_count, type, x, y)
+#define place_tileq_fg(type, x, y) place_tile(fg_tiles, &fg_tile_count, type, x, y)
 #define place_objectq(type, x, y, w, h) place_object(objects, &object_count, type, (Rectangle){(x)*48, (y)*48, (w)*48, (h)*48})
 
 Level init_lvl_0(int scrw, int scrh){
@@ -46,85 +47,114 @@ Level init_lvl_0(int scrw, int scrh){
     //island
     place_objectq(OBJ_WP, max_right - 3, 9, 2, 1);
 
-    Tile tiles[256] = {0};
-    int tile_count = 0;
+    Tile fg_tiles[256] = {0};
+    int fg_tile_count = 0;
 
-    /// ---- PLACEMENTS
+    /// ---- FOREGROUND
     for(int i = 0; i < max_right - 1; i++){
-        place_tileq(GRASS, i, max_down - 1);
+        place_tileq_fg(GRASS, i, max_down - 1);
     }
-    place_tileq(WALL_RIGHT, max_right - 1, max_down - 1);
+    place_tileq_fg(WALL_RIGHT, max_right - 1, max_down - 1);
 
-    place_tileq(PILLAR_BOTTOM, 10, max_down - 2);
-    place_tileq(PILLAR_MID, 10, max_down - 3);
-    place_tileq(PILLAR_MID, 10, max_down - 4);
-    place_tileq(PILLAR_TOP, 10, max_down - 5);
+    place_tileq_fg(PILLAR_BOTTOM, 10, max_down - 2);
+    place_tileq_fg(PILLAR_MID, 10, max_down - 3);
+    place_tileq_fg(PILLAR_MID, 10, max_down - 4);
+    place_tileq_fg(PILLAR_TOP, 10, max_down - 5);
 
-    place_tileq(PILLAR_BOTTOM, 7, max_down - 2);
-    place_tileq(PILLAR_TOP, 7, max_down - 3);
+    place_tileq_fg(PILLAR_BOTTOM, 7, max_down - 2);
+    place_tileq_fg(PILLAR_TOP, 7, max_down - 3);
 
     for(int i = 1; i < max_right - 1; i++){
-        place_tileq(DEFAULT_CEIL, i, 0);
+        place_tileq_fg(DEFAULT_CEIL, i, 0);
     }
     for(int j = 1; j < max_down - 3; j++){
-        place_tileq(WALL_LEFT, 0, j);
-        place_tileq(WALL_RIGHT, max_right - 1, j);
+        place_tileq_fg(WALL_LEFT, 0, j);
+        place_tileq_fg(WALL_RIGHT, max_right - 1, j);
     }
-    //TODO: Make these connectors work!
-    //place_tileq(CONNECTOR_RIGHT, 0, 0);
-    //place_tileq(CONNECTOR_LEFT, max_right-1, 0);
 
-    place_tileq(WALL_LEFT_DOWN, 0, max_down - 3);
-    place_tileq(WALL_RIGHT, max_right - 1, max_down - 2);
-    place_tileq(WALL_RIGHT, max_right - 1, max_down - 3);
+    place_tileq_fg(WALL_LEFT_DOWN, 0, max_down - 3);
+    place_tileq_fg(WALL_RIGHT, max_right - 1, max_down - 2);
+    place_tileq_fg(WALL_RIGHT, max_right - 1, max_down - 3);
 
-    place_tileq(RED_FLOWER, 5, max_down - 2);
-    place_tileq(RED_FLOWER, max_right - 2, max_down - 2);
-    place_tileq(BLUE_FLOWER, 3, max_down - 2);
-    place_tileq(BLUE_FLOWER, 8, max_down - 2);
-    place_tileq(BUSH, 6, max_down - 2);
-    place_tileq(VINES, 10, max_down - 5);
+    place_tileq_fg(RED_FLOWER, max_right - 2, max_down - 2);
+    place_tileq_fg(BLUE_FLOWER, 3, max_down - 2);
+    place_tileq_fg(BLUE_FLOWER, 8, max_down - 2);
+    place_tileq_fg(BUSH, 6, max_down - 2);
+    place_tileq_fg(VINES, 10, max_down - 5);
 
     for(int x = max_right - 3; x < max_right - 1; x++){
-        place_tileq(GROUND_TOP, x, 9);
+        place_tileq_fg(GROUND_TOP, x, 9);
     }
 
-    //place_tileq(LADDER, );
+    place_tileq_fg(CONNECTOR_RIGHT_DOWN, 0, 0);
+    place_tileq_fg(CONNECTOR_LEFT_DOWN, max_right-1, 0);
+
+    /// ----
+    ///
+    
+    Tile bg_tiles[256] = {0};
+    int bg_tile_count = 0;
+
+    /// ---- BACKGROUND
+
+    place_tileq_bg(RED_FLOWER, 5, max_down - 2);
 
     /// ----
 
 
+    // objects
     lvl0.objects = malloc(sizeof(objects));
     for (int i = 0; i < object_count; i++) {
             lvl0.objects[i] = objects[i];
     }
     lvl0.object_count = object_count;
-
-    lvl0.tiles = malloc(sizeof(tiles));
-    for (int i = 0; i < tile_count; i++) {
-            lvl0.tiles[i] = tiles[i];
+    // foreground
+    lvl0.fg_tiles = malloc(sizeof(fg_tiles));
+    for (int i = 0; i < fg_tile_count; i++) {
+            lvl0.fg_tiles[i] = fg_tiles[i];
     }
-    lvl0.tile_count = tile_count;
-
+    lvl0.fg_tile_count = fg_tile_count;
+    // background
+    lvl0.bg_tiles = malloc(sizeof(bg_tiles));
+    for (int i = 0; i < bg_tile_count; i++) {
+            lvl0.bg_tiles[i] = bg_tiles[i];
+    }
+    lvl0.bg_tile_count = bg_tile_count;
     return lvl0;
 }
 
-void draw_level(Level level, Font font, float sec, bool debug){
-    for(int i = 0; i < level.tile_count; i++){
-        int tm_x = level.tiles[i].type % 6;
-        int tm_y = level.tiles[i].type / 6;
-        Rectangle source = (Rectangle){.x = 16 * tm_x, .y = 16 * tm_y, .width = 16, .height = 16};
-        Rectangle dest = (Rectangle){.x = level.tiles[i].pos.x, .y = level.tiles[i].pos.y, .width = 16 * 3, .height = 16 * 3};
-        DrawTexturePro(level.tilemap, source, dest, (Vector2){.x = 0, .y = 0}, 0, WHITE);
-    }
+void draw_title(Level level, Font font, int sec){
     if(sec < 6){
         DrawTextEx(font,
                 TextFormat("Level %d: %s", level.level_count, level.name),
                 (Vector2){.x = 20, .y = 20}, 32, 1, RAYWHITE);
-    } else if(sec <= 10){
+    } else {
         DrawTextEx(font,
                 TextFormat("Level %d: %s", level.level_count, level.name),
                 (Vector2){.x = 20, .y = 20}, 32, 1, (Color){245, 245, 245, 255 - (sec - 6) * 60});
+    }
+}
+
+void draw_level_bg(Level level, Font font, float sec, bool debug){
+    for(int i = 0; i < level.bg_tile_count; i++){
+        int tm_x = level.bg_tiles[i].type % 6;
+        int tm_y = level.bg_tiles[i].type / 6;
+        Rectangle source = (Rectangle){.x = 16 * tm_x, .y = 16 * tm_y, .width = 16, .height = 16};
+        Rectangle dest = (Rectangle){.x = level.bg_tiles[i].pos.x, .y = level.bg_tiles[i].pos.y, .width = 16 * 3, .height = 16 * 3};
+        DrawTexturePro(level.tilemap, source, dest, (Vector2){.x = 0, .y = 0}, 0, WHITE);
+    }
+}
+void draw_level_fg(Level level, Font font, float sec, bool debug){
+    for(int i = 0; i < level.fg_tile_count; i++){
+        int tm_x = level.fg_tiles[i].type % 6;
+        int tm_y = level.fg_tiles[i].type / 6;
+        Rectangle source = (Rectangle){.x = 16 * tm_x, .y = 16 * tm_y, .width = 16, .height = 16};
+        Rectangle dest = (Rectangle){.x = level.fg_tiles[i].pos.x, .y = level.fg_tiles[i].pos.y, .width = 16 * 3, .height = 16 * 3};
+        DrawTexturePro(level.tilemap, source, dest, (Vector2){.x = 0, .y = 0}, 0, WHITE);
+    }
+
+    if(sec < 10){
+        draw_title(level, font, sec);
     }
 
     if(debug){

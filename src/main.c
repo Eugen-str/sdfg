@@ -1,5 +1,6 @@
 #include <raylib.h>
 #include <string.h>
+#include "load_level.h"
 #include "player.h"
 #include "map.h"
 
@@ -29,7 +30,9 @@ int main(){
 
     Color bg_color = color_from_int(0x3c3836);
     Font iosevka = LoadFont("assets/iosevka.ttf");
-    Level current_level = init_lvl_0(scrw, scrh);
+
+    //Level current_level = init_lvl_0(scrw, scrh);
+    Level current_level = load_level(0);
     Player player = make_player(current_level);
 
     int frames = 0;
@@ -50,8 +53,9 @@ int main(){
                 debug_info(logs);
                 DrawText(logs, 50, 50, 25, RED);
             }
+            draw_level_bg(current_level, iosevka, frames * delta, debug);
             draw_player(player);
-            draw_level(current_level, iosevka, frames * delta, debug);
+            draw_level_fg(current_level, iosevka, frames * delta, debug);
             update_player(&player, current_level, frames, delta);
         EndDrawing();
         frames++;

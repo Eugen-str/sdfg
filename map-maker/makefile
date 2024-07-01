@@ -1,9 +1,9 @@
 LIBS=-lraylib
-SRC=src/main.c src/map.c src/player.c src/collision.c src/load_level.c
+SRC=src/main.c
 
 BUILD_DIR=build
 OUT_DIR=$(BUILD_DIR)
-OUT_NAME=sdfg
+OUT_NAME=sdfg-map-maker
 
 sdfg: $(SRC) | $(BUILD_DIR)
 	gcc $(SRC) -o $(OUT_DIR)/$(OUT_NAME) $(LINK) $(LIBS)

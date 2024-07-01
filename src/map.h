@@ -38,8 +38,10 @@ typedef enum{
 
     DEFAULT_FLOOR = 36,
     DEFAULT_CEIL,
-    CONNECTOR_RIGHT,
-    CONNECTOR_LEFT,
+    CONNECTOR_RIGHT_UP,
+    CONNECTOR_LEFT_UP,
+    CONNECTOR_RIGHT_DOWN,
+    CONNECTOR_LEFT_DOWN,
 
     LADDER = 42,
 }TileType;
@@ -69,11 +71,18 @@ typedef struct{
     Object *objects;
     int object_count;
 
-    Tile *tiles;
-    int tile_count;
+    Tile *fg_tiles;
+    int fg_tile_count;
+    
+    Tile *bg_tiles;
+    int bg_tile_count;
 }Level;
 
 Level init_lvl_0(int scrw, int scrh);
-void draw_level(Level level, Font font, float sec, bool debug);
+void draw_level_fg(Level level, Font font, float sec, bool debug);
+void draw_level_bg(Level level, Font font, float sec, bool debug);
+
+void place_tile(Tile *tiles, int *tile_count, TileType type, int x, int y);
+void place_object(Object *objects, int *object_count, ObjectType type, Rectangle rect);
 
 #endif //MAP_H_
