@@ -240,6 +240,8 @@ void save_to_file(int bg_buffer[16][16], int fg_buffer[16][16], int *objects, in
         }
         fprintf(map_file, "\n");
     }
+    // object_count
+    fprintf(map_file, "%d\n", object_count);
     // objects
     fprintf(map_file, "\n");
     for(int i = 0; i < object_count; i++){
