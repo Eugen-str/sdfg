@@ -216,7 +216,7 @@ void update_place_texture(Panel game_panel, Vector2 mouse_pos, int bg_buffer[16]
     }
 }
 
-void save_to_file(int bg_buffer[16][16], int fg_buffer[16][16], int *objects, int object_count){
+void save_to_file(Vector2 spawn_point, int bg_buffer[16][16], int fg_buffer[16][16], int *objects, int object_count){
     FILE *map_file;
     map_file = fopen("saved_maps/map.txt", "w");
 
@@ -224,6 +224,8 @@ void save_to_file(int bg_buffer[16][16], int fg_buffer[16][16], int *objects, in
     fprintf(map_file, "16 16\n");
     // map background color
     fprintf(map_file, "0x3c3836\n");
+    // spawn point
+    fprintf(map_file, "%d %d\n", (int)spawn_point.x, (int)spawn_point.y);
     fprintf(map_file, "\n");
     // background tiles
     for(int i = 0; i < 16; i++){
@@ -262,7 +264,7 @@ void update_button_save(Panel button_save, Vector2 mouse_pos, Logs *logs, Color 
         DrawRectangleLinesEx(button_save.rect, 3, highlight_color);
         if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
             DrawRectangleLinesEx(button_save.rect, 3, highlight_color);
-            save_to_file(bg_buffer, fg_buffer, objects, object_count);
+            save_to_file((Vector2){15, 0}, bg_buffer, fg_buffer, objects, object_count);
 
             logs_add(logs, "Saved map.txt to saved_maps directory! Don't forget to copy it to game folder", 5);
         }
@@ -279,7 +281,7 @@ void update_place_object(Panel game_panel, Vector2 mouse_pos, bool *object_start
             *object_start_loc = (Vector2){.x = x, .y = y};
         } else {
             *object_start = false;
-            int x = round((mouse_pos.x - game_panel.rect.x) / sq_size), y = round((mouse_pos.y - game_panel.rect.y) / sq_size);
+            int x = floor((mouse_pos.x - game_panel.rect.x) / sq_size)+1, y = floor((mouse_pos.y - game_panel.rect.y) / sq_size)+1;
             // objects are int this format
             // x y w h type
             Rectangle object = (Rectangle){.x = object_start_loc->x, .y = object_start_loc->y,
@@ -344,6 +346,7 @@ void update_checkbox(Panel *checkbox_object, Vector2 mouse_pos, Color highlight_
 
 int main(){
     InitWindow(1100, 1024, "sdfg map maker!");
+
     Texture2D atlas = LoadTexture("../assets/tiles.png");
     Texture2D button_tex = LoadTexture("assets/button.png");
     Font iosevka = LoadFont("../assets/iosevka.ttf");

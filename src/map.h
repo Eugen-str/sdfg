@@ -62,18 +62,16 @@ typedef struct{
 }Object;
 
 typedef struct{
-    int level_count;
-    const char* name;
-
     Vector2 spawn_point;
     Texture2D tilemap;
+    Color bg_color;
 
     Object *objects;
     int object_count;
 
     Tile *fg_tiles;
     int fg_tile_count;
-    
+
     Tile *bg_tiles;
     int bg_tile_count;
 }Level;

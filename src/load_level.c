@@ -3,6 +3,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+Color color_from_int(int n){
+    return (Color){
+        .a = 255,
+        .r = n >> 8 * 2,
+        .g = n >> 8 * 1,
+        .b = n >> 8 * 0,
+    };
+}
+
 Level load_level(int n){
     Level level = {0};
     level.tilemap = LoadTexture("assets/tiles.png");
@@ -11,8 +20,13 @@ Level load_level(int n){
 
     int map_width, map_height;
     int bg_color;
+    int spawn_x, spawn_y;
 
-    fscanf(map_file, "%d%d%x", &map_width, &map_height, &bg_color);
+    // map width, map height, background color, spawn point x & y
+    fscanf(map_file, "%d%d%x%d%d", &map_width, &map_height, &bg_color, &spawn_x, &spawn_y);
+
+    level.spawn_point = (Vector2){.x = spawn_x, .y = spawn_y};
+    level.bg_color = color_from_int(bg_color);
 
     // BACKGROUND
 
@@ -20,8 +34,8 @@ Level load_level(int n){
     int bg_tile_count = 0;
 
     int bg_tile;
-    for(int i = 0; i < 16; i++){
-        for(int j = 0; j < 16; j++){
+    for(int i = 0; i < map_height; i++){
+        for(int j = 0; j < map_width; j++){
             fscanf(map_file, "%d", &bg_tile);
             if(bg_tile != 0){
                 place_tile(bg_tiles, &bg_tile_count, bg_tile, j, i);
@@ -35,8 +49,8 @@ Level load_level(int n){
     int fg_tile_count = 0;
     
     int fg_tile;
-    for(int i = 0; i < 16; i++){
-        for(int j = 0; j < 16; j++){
+    for(int i = 0; i < map_height; i++){
+        for(int j = 0; j < map_width; j++){
             fscanf(map_file, "%d", &fg_tile);
             if(fg_tile != 0){
                 place_tile(fg_tiles, &fg_tile_count, fg_tile, j, i);

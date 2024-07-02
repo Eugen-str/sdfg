@@ -67,4 +67,9 @@ void update_player(Player *player, Level level, int frames, float delta){
     } else if(player->speed < 0){
         player->state = JUMPING;
     }
+
+    if(player->rect.y >= 16*70){
+        player->rect.x = level.spawn_point.x;
+        player->rect.y = level.spawn_point.y;
+    }
 }

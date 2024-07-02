@@ -34,3 +34,19 @@ D - right
 
 R - reset player position
 F1 - debug mode
+
+
+## todo
+
+* sdfg
+  * better collision
+  * levels with variable dimensions (not only 16x16)
+  * camera system
+  * sound effects
+  * add system for music
+  * enemies and other 'living' beings
+* sdfg map maker
+  * add support for loading files
+  * add support for choosing object type
+  * add support for placing spawn point
+

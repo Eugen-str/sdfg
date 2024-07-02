@@ -26,8 +26,6 @@ Level init_lvl_0(int scrw, int scrh){
     int max_down = scrh / 48;
 
     Level lvl0 = {0};
-    lvl0.level_count = 0;
-    lvl0.name = "Tutorial";
     lvl0.tilemap = LoadTexture("assets/tiles.png");
     lvl0.spawn_point = (Vector2){.x = 48 * 3, .y = max_down * 48 - 3 * 48};
 
@@ -123,18 +121,6 @@ Level init_lvl_0(int scrw, int scrh){
     return lvl0;
 }
 
-void draw_title(Level level, Font font, int sec){
-    if(sec < 6){
-        DrawTextEx(font,
-                TextFormat("Level %d: %s", level.level_count, level.name),
-                (Vector2){.x = 20, .y = 20}, 32, 1, RAYWHITE);
-    } else {
-        DrawTextEx(font,
-                TextFormat("Level %d: %s", level.level_count, level.name),
-                (Vector2){.x = 20, .y = 20}, 32, 1, (Color){245, 245, 245, 255 - (sec - 6) * 60});
-    }
-}
-
 void draw_level_bg(Level level, Font font, float sec, bool debug){
     for(int i = 0; i < level.bg_tile_count; i++){
         int tm_x = level.bg_tiles[i].type % 6;
@@ -151,10 +137,6 @@ void draw_level_fg(Level level, Font font, float sec, bool debug){
         Rectangle source = (Rectangle){.x = 16 * tm_x, .y = 16 * tm_y, .width = 16, .height = 16};
         Rectangle dest = (Rectangle){.x = level.fg_tiles[i].pos.x, .y = level.fg_tiles[i].pos.y, .width = 16 * 3, .height = 16 * 3};
         DrawTexturePro(level.tilemap, source, dest, (Vector2){.x = 0, .y = 0}, 0, WHITE);
-    }
-
-    if(sec < 10){
-        draw_title(level, font, sec);
     }
 
     if(debug){
