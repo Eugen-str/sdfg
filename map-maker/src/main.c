@@ -1,5 +1,8 @@
 #include <raylib.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
 
 Color color_from_int(int n){
     return (Color){
@@ -15,6 +18,29 @@ typedef struct{
     Color bg_color;
     Color border_color;
 }Panel;
+
+typedef struct{
+    char logs[128];
+    int started_time;
+    int length;
+}Logs;
+
+void logs_add(Logs *logs, char *str, int length){
+    strcpy(logs->logs, str);
+    logs->started_time = GetTime();
+    logs->length = length;
+}
+
+void logs_update_draw(Logs *logs, Font font, Color color){
+    DrawLine(0, 980, 1100, 980, color);
+    DrawTextEx(font, "LOGS:", (Vector2){.x = 0, .y = 960}, 20, 1, WHITE);
+
+    if(GetTime() >= logs->started_time + logs->length){
+        return;
+    }
+
+    DrawTextEx(font, logs->logs, (Vector2){.x = 0, .y = 982}, 30, 1, WHITE);
+}
 
 void draw_panels(Panel **p, int n){
     for(int i = 0; i < n; i++){
@@ -54,6 +80,13 @@ bool clicked_within(Panel p, Vector2 mouse_pos){
             p.rect.x + p.rect.width >= mouse_pos.x &&
             p.rect.y <= mouse_pos.y &&
             p.rect.y + p.rect.height >= mouse_pos.y);
+}
+
+bool clicked_within_rect(Rectangle rect, Vector2 mouse_pos){
+    return (rect.x <= mouse_pos.x &&
+            rect.x + rect.width >= mouse_pos.x &&
+            rect.y <= mouse_pos.y &&
+            rect.y + rect.height >= mouse_pos.y);
 }
 
 void update_buttons_up_down(Panel btn_up, Panel btn_down, Vector2 mouse_pos, int *n, Color highlight_color){
@@ -166,12 +199,143 @@ void update_place_texture(Panel game_panel, Vector2 mouse_pos, int bg_buffer[16]
     int sq_size = game_panel.rect.width / 16;
     if(clicked_within(game_panel, mouse_pos) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
         int x = (mouse_pos.x - game_panel.rect.x) / sq_size, y = (mouse_pos.y - game_panel.rect.y) / sq_size;
-        printf("%d %d\n", x, y);
 
         if(current_layer == 0){ // background
             bg_buffer[x][y] = selected_tex;
         } else if(current_layer == 1){ // foreground
             fg_buffer[x][y] = selected_tex;
+        }
+    }
+    else if (clicked_within(game_panel, mouse_pos) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
+        int x = (mouse_pos.x - game_panel.rect.x) / sq_size, y = (mouse_pos.y - game_panel.rect.y) / sq_size;
+        if(current_layer == 0){ // background
+            bg_buffer[x][y] = 0;
+        } else if(current_layer == 1){ // foreground
+            fg_buffer[x][y] = 0;
+        }
+    }
+}
+
+void save_to_file(int bg_buffer[16][16], int fg_buffer[16][16], int *objects, int object_count){
+    FILE *map_file;
+    map_file = fopen("saved_maps/map.txt", "w");
+
+    // map width and height
+    fprintf(map_file, "16 16\n");
+    // map background color
+    fprintf(map_file, "0x3c3836\n");
+    fprintf(map_file, "\n");
+    // background tiles
+    for(int i = 0; i < 16; i++){
+        for(int j = 0; j < 16; j++){
+            fprintf(map_file, "%d ", bg_buffer[j][i]);
+        }
+        fprintf(map_file, "\n");
+    }
+    // foreground tiles
+    fprintf(map_file, "\n");
+    for(int i = 0; i < 16; i++){
+        for(int j = 0; j < 16; j++){
+            fprintf(map_file, "%d ", fg_buffer[j][i]);
+        }
+        fprintf(map_file, "\n");
+    }
+    // objects
+    fprintf(map_file, "\n");
+    for(int i = 0; i < object_count; i++){
+        fprintf(map_file, "%d %d %d %d %d\n",
+                objects[i*5 + 0],
+                objects[i*5 + 1],
+                objects[i*5 + 2],
+                objects[i*5 + 3],
+                objects[i*5 + 4]);
+    }
+
+    fclose(map_file);
+}
+
+
+void update_button_save(Panel button_save, Vector2 mouse_pos, Logs *logs, Color highlight_color, int bg_buffer[16][16], int fg_buffer[16][16], int *objects, int object_count){
+    if(clicked_within(button_save, mouse_pos)){
+        DrawRectangleLinesEx(button_save.rect, 3, highlight_color);
+        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+            DrawRectangleLinesEx(button_save.rect, 3, highlight_color);
+            save_to_file(bg_buffer, fg_buffer, objects, object_count);
+
+            logs_add(logs, "Saved map.txt to saved_maps directory! Don't forget to copy it to game folder", 5);
+        }
+    }
+}
+
+void update_place_object(Panel game_panel, Vector2 mouse_pos, bool *object_start, Vector2 *object_start_loc, int *objects, int *object_count){
+    int sq_size = game_panel.rect.width / 16;
+    if(clicked_within(game_panel, mouse_pos) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+        if(*object_start == false){
+            *object_start = true;
+
+            int x = (mouse_pos.x - game_panel.rect.x) / sq_size, y = (mouse_pos.y - game_panel.rect.y) / sq_size;
+            *object_start_loc = (Vector2){.x = x, .y = y};
+        } else {
+            *object_start = false;
+            int x = round((mouse_pos.x - game_panel.rect.x) / sq_size), y = round((mouse_pos.y - game_panel.rect.y) / sq_size);
+            // objects are int this format
+            // x y w h type
+            Rectangle object = (Rectangle){.x = object_start_loc->x, .y = object_start_loc->y,
+                .width = x - object_start_loc->x, .height = y - object_start_loc->y};
+            objects[*object_count * 5 + 0] = object.x;
+            objects[*object_count * 5 + 1] = object.y;
+            objects[*object_count * 5 + 2] = object.width;
+            objects[*object_count * 5 + 3] = object.height;
+            objects[*object_count * 5 + 4] = 0;
+            *object_count += 1;
+        }
+    }
+    else if(clicked_within(game_panel, mouse_pos) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
+        int x = round((mouse_pos.x - game_panel.rect.x) / sq_size), y = round((mouse_pos.y - game_panel.rect.y) / sq_size);
+        for(int i = 0; i < *object_count; i++){
+            Rectangle object = (Rectangle){
+                .x = objects[i*5 + 0] * sq_size + game_panel.rect.x,
+                .y = objects[i*5 + 1] * sq_size + game_panel.rect.y ,
+                .width = objects[i*5 + 2] * sq_size,
+                .height = objects[i*5 + 3] * sq_size,
+            };
+            if(clicked_within_rect(object, mouse_pos)){
+                for(int j = i; j < *object_count; j++){
+                    objects[j*5 + 0] = objects[(j+1)*5 + 0];
+                    objects[j*5 + 1] = objects[(j+1)*5 + 1];
+                    objects[j*5 + 2] = objects[(j+1)*5 + 2];
+                    objects[j*5 + 3] = objects[(j+1)*5 + 3];
+                    objects[j*5 + 4] = objects[(j+1)*5 + 4];
+                }
+                *object_count -= 1;
+                return;
+            }
+        }
+    }
+}
+
+void draw_objects(Panel game_panel, int *objects, int object_count, Color color){
+    int sq_size = game_panel.rect.width / 16;
+    for(int i = 0; i < object_count; i++){
+        Rectangle object = (Rectangle){
+            .x = objects[i*5 + 0] * sq_size + game_panel.rect.x,
+            .y = objects[i*5 + 1] * sq_size + game_panel.rect.y ,
+            .width = objects[i*5 + 2] * sq_size,
+            .height = objects[i*5 + 3] * sq_size,
+        };
+        DrawRectangleRec(object, color);
+    }
+}
+void update_checkbox(Panel *checkbox_object, Vector2 mouse_pos, Color highlight_color, Color checked, Color unchecked, bool *check){
+    if(clicked_within(*checkbox_object, mouse_pos)){
+        DrawRectangleLinesEx(checkbox_object->rect, 3, highlight_color);
+        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+            if(*check){
+                checkbox_object->bg_color = unchecked;
+            } else {
+                checkbox_object->bg_color = checked;
+            }
+            *check = !(*check);
         }
     }
 }
@@ -187,6 +351,7 @@ int main(){
     Color dblue = color_from_int(0x458588);
     Color white = color_from_int(0xffffff);
     Color dusty_gray = color_from_int(0x665c54);
+    Color green = color_from_int(0xb8bb26);
 
     Color bg_color = color_from_int(0x181818);
     Color panel_border_color = lblue;
@@ -218,25 +383,50 @@ int main(){
         .rect = (Rectangle){.x = right_btn_x, .y = 3*a + 2*right_btn_h, .width = right_btn_w, .height = right_btn_h}};
 
 
-    Panel selected_tex_view = (Panel){ .bg_color = game_bg_color, .border_color = lblue,
+    Panel selected_tex_view = (Panel){.bg_color = game_bg_color, .border_color = lblue,
         .rect = (Rectangle){.x = game_panel.rect.x + game_panel.rect.width - a*2, .y = button_up.rect.y, .width = a*2, .height = a*2}};
+
+    Panel button_save = (Panel){.bg_color = game_bg_color, .border_color = lblue,
+        .rect = (Rectangle){.x = selected_tex_view.rect.x + selected_tex_view.rect.width + a, 
+            .y = selected_tex_view.rect.y, .width = 200, .height = a*2}};
+
+    int checkbox_side = 25;
+    bool show_objects = false;
+    Panel checkbox_object = (Panel){.bg_color = game_bg_color, .border_color = lblue,
+        .rect = (Rectangle){.x = button_select_objects.rect.x - checkbox_side - d,
+            .y = button_select_objects.rect.y + (int)(checkbox_side / 2), .width = checkbox_side, .height = checkbox_side}};
 
     Panel *panels[] = {
         &game_panel,
         &tex_panel,
+
         &button_up,
         &button_down,
+
         &button_select_bg,
         &button_select_fg,
         &button_select_objects,
+
         &selected_tex_view,
+
+        &button_save,
+
+        &checkbox_object,
     };
+
+    Logs logs = {0};
 
     int panel_count = sizeof(panels) / sizeof(&panels[0]);
 
     int tex_panel_loc = 0;
     int selected_tex = 0;
     int selected_layer = 0;
+
+    bool object_start = false;
+    Vector2 object_start_loc;
+
+    int *objects = malloc(sizeof(int) * 128);
+    int object_count = 0;
 
     int bg_buffer[16][16];
     int fg_buffer[16][16];
@@ -267,16 +457,32 @@ int main(){
 
             draw_game_panel(game_panel, atlas, bg_buffer, fg_buffer, dusty_gray);
 
-            if(IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
+            draw_panel_text(button_save, iosevka, "SAVE", 48, WHITE);
+
+            if(show_objects)
+                draw_objects(game_panel, objects, object_count, dblue);
+
+            if(IsMouseButtonDown(MOUSE_BUTTON_LEFT) || IsMouseButtonDown(MOUSE_BUTTON_RIGHT)){
                 Vector2 mouse_pos = GetMousePosition();
+
                 update_buttons_up_down(button_up, button_down, mouse_pos, &tex_panel_loc, dblue);
                 update_buttons_select(&button_select_bg, &button_select_fg, &button_select_objects, mouse_pos,
                         &selected_layer, dblue, game_bg_color, selected_button);
+                update_button_save(button_save, mouse_pos, &logs, dblue, bg_buffer, fg_buffer, objects, object_count);
+
                 update_texture_select(tex_panel, tex_panel_loc, &selected_tex, mouse_pos);
-                update_place_texture(game_panel, mouse_pos, bg_buffer, fg_buffer, selected_tex, selected_layer);
+
+                if(selected_layer == 2)
+                    update_place_object(game_panel, mouse_pos, &object_start, &object_start_loc, objects, &object_count);
+                else
+                    update_place_texture(game_panel, mouse_pos, bg_buffer, fg_buffer, selected_tex, selected_layer);
+
+                update_checkbox(&checkbox_object, mouse_pos, dblue, green, game_bg_color, &show_objects);
             }
 
+            logs_update_draw(&logs, iosevka, dblue);
         EndDrawing();
     }
     CloseWindow();
+    return 0;
 }
