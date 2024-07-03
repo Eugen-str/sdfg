@@ -27,7 +27,8 @@ Level init_lvl_0(int scrw, int scrh){
 
     Level lvl0 = {0};
     lvl0.tilemap = LoadTexture("assets/tiles.png");
-    lvl0.spawn_point = (Vector2){.x = 48 * 3, .y = max_down * 48 - 3 * 48};
+    //lvl0.spawn_point = (Vector2){.x = 48 * 3, .y = max_down * 48 - 3 * 48};
+    lvl0.bg_color = (Color){100, 100, 100, 255};
 
     Object objects[256];
     int object_count = 0;

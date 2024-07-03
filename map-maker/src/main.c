@@ -172,7 +172,7 @@ void draw_selected_tex(Panel selected_tex_view, Font font, Texture2D atlas, int 
     DrawTexturePro(atlas, source, selected_tex_view.rect, (Vector2){0, 0}, 0, WHITE);
 }
 
-void draw_game_panel(Panel game_panel, Texture2D atlas, int bg_buffer[16][16], int fg_buffer[16][16], Color line_color){
+void draw_game_panel(Panel game_panel, Texture2D atlas, int bg_buffer[16][16], bool show_bg, int fg_buffer[16][16], bool show_fg, Color line_color){
     int sq_size = game_panel.rect.width / 16;
     for(int i = 1; i < 16; i++){
         DrawLine(game_panel.rect.x, i * sq_size + game_panel.rect.y, sq_size + game_panel.rect.width, i * sq_size + game_panel.rect.y, line_color);
@@ -189,8 +189,10 @@ void draw_game_panel(Panel game_panel, Texture2D atlas, int bg_buffer[16][16], i
             Rectangle fg_source = (Rectangle){.x = fg_tex % 6 * 16, .y = (int)(fg_tex / 6) * 16,
                 .width = 16, .height = 16};
             Rectangle dest = (Rectangle){.x = game_panel.rect.x + j*sq_size, .y = game_panel.rect.y + i*sq_size, .width = sq_size, .height = sq_size};
-            DrawTexturePro(atlas, bg_source, dest, (Vector2){0, 0}, 0, WHITE);
-            DrawTexturePro(atlas, fg_source, dest, (Vector2){0, 0}, 0, WHITE);
+            if(show_bg)
+                DrawTexturePro(atlas, bg_source, dest, (Vector2){0, 0}, 0, WHITE);
+            if(show_fg)
+                DrawTexturePro(atlas, fg_source, dest, (Vector2){0, 0}, 0, WHITE);
         }
     }
 }
@@ -344,7 +346,58 @@ void update_checkbox(Panel *checkbox_object, Vector2 mouse_pos, Color highlight_
     }
 }
 
-int main(){
+void load_file(Logs *logs, int bg_buffer[16][16], int fg_buffer[16][16], int *objects, int *object_count, char *path){
+    FILE *map_file;
+    map_file = fopen(path, "r");
+    if(map_file == NULL){
+        logs_add(logs, TextFormat("Could not load map file: %s", path), 5);
+        return;
+    }
+    int map_width, map_height;
+    int bg_color;
+    int spawn_x, spawn_y;
+
+    fscanf(map_file, "%d%d%x%d%d", &map_width, &map_height, &bg_color, &spawn_x, &spawn_y);
+
+    int bg_tile;
+    for(int i = 0; i < map_height; i++){
+        for(int j = 0; j < map_width; j++){
+            fscanf(map_file, "%d", &bg_tile);
+            if(bg_tile != 0){
+                bg_buffer[j][i] = bg_tile;
+            }
+        }
+    }
+
+    int fg_tile;
+    for(int i = 0; i < map_height; i++){
+        for(int j = 0; j < map_width; j++){
+            fscanf(map_file, "%d", &fg_tile);
+            if(fg_tile != 0){
+                fg_buffer[j][i] = fg_tile;
+            }
+        }
+    }
+
+    int num_objects;
+    fscanf(map_file, "%d", &num_objects);
+
+    for(int i = 0; i < num_objects; i++){
+        int x, y, w, h, type;
+        fscanf(map_file, "%d%d%d%d%d", &x, &y, &w, &h, &type);
+        objects[*object_count * 5 + 0] = x;
+        objects[*object_count * 5 + 1] = y;
+        objects[*object_count * 5 + 2] = w;
+        objects[*object_count * 5 + 3] = h;
+        objects[*object_count * 5 + 4] = 0;
+        *object_count += 1;
+    }
+
+    fclose(map_file);
+    logs_add(logs, TextFormat("Sucessfully loaded map file: %s", path), 5);
+}
+
+int main(int argc, char* argv[]){
     InitWindow(1100, 1024, "sdfg map maker!");
 
     Texture2D atlas = LoadTexture("../assets/tiles.png");
@@ -397,9 +450,19 @@ int main(){
 
     int checkbox_side = 25;
     bool show_objects = false;
+    bool show_backround = true;
+    bool show_foreground = true;
     Panel checkbox_object = (Panel){.bg_color = game_bg_color, .border_color = lblue,
         .rect = (Rectangle){.x = button_select_objects.rect.x - checkbox_side - d,
             .y = button_select_objects.rect.y + (int)(checkbox_side / 2), .width = checkbox_side, .height = checkbox_side}};
+
+    Panel checkbox_bg = (Panel){.bg_color = green, .border_color = lblue,
+        .rect = (Rectangle){.x = button_select_bg.rect.x - checkbox_side - d,
+            .y = button_select_bg.rect.y + (int)(checkbox_side / 2), .width = checkbox_side, .height = checkbox_side}};
+
+    Panel checkbox_fg = (Panel){.bg_color = green, .border_color = lblue,
+        .rect = (Rectangle){.x = button_select_fg.rect.x - checkbox_side - d,
+            .y = button_select_fg.rect.y + (int)(checkbox_side / 2), .width = checkbox_side, .height = checkbox_side}};
 
     Panel *panels[] = {
         &game_panel,
@@ -417,6 +480,8 @@ int main(){
         &button_save,
 
         &checkbox_object,
+        &checkbox_bg,
+        &checkbox_fg,
     };
 
     Logs logs = {0};
@@ -442,6 +507,10 @@ int main(){
         }
     }
 
+    if(argc > 1){
+        load_file(&logs, bg_buffer, fg_buffer, objects, &object_count, argv[1]);
+    }
+
     SetTargetFPS(60);
     while(!WindowShouldClose()){
         BeginDrawing();
@@ -460,7 +529,7 @@ int main(){
 
             draw_selected_tex(selected_tex_view, iosevka, atlas, selected_tex, 16);
 
-            draw_game_panel(game_panel, atlas, bg_buffer, fg_buffer, dusty_gray);
+            draw_game_panel(game_panel, atlas, bg_buffer, show_backround, fg_buffer, show_foreground, dusty_gray);
 
             draw_panel_text(button_save, iosevka, "SAVE", 48, WHITE);
 
@@ -483,6 +552,8 @@ int main(){
                     update_place_texture(game_panel, mouse_pos, bg_buffer, fg_buffer, selected_tex, selected_layer);
 
                 update_checkbox(&checkbox_object, mouse_pos, dblue, green, game_bg_color, &show_objects);
+                update_checkbox(&checkbox_fg, mouse_pos, dblue, green, game_bg_color, &show_foreground);
+                update_checkbox(&checkbox_bg, mouse_pos, dblue, green, game_bg_color, &show_backround);
             }
 
             logs_update_draw(&logs, iosevka, dblue);

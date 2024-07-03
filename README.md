@@ -46,7 +46,6 @@ F1 - debug mode
   * add system for music
   * enemies and other 'living' beings
 * sdfg map maker
-  * add support for loading files
   * add support for choosing object type
   * add support for placing spawn point
 

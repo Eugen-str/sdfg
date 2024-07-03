@@ -62,6 +62,8 @@ typedef struct{
 }Object;
 
 typedef struct{
+    int height;
+    int width;
     Vector2 spawn_point;
     Texture2D tilemap;
     Color bg_color;

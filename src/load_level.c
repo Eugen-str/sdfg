@@ -25,12 +25,14 @@ Level load_level(int n){
     // map width, map height, background color, spawn point x & y
     fscanf(map_file, "%d%d%x%d%d", &map_width, &map_height, &bg_color, &spawn_x, &spawn_y);
 
-    level.spawn_point = (Vector2){.x = spawn_x, .y = spawn_y};
+    level.width = map_width;
+    level.height = map_height;
     level.bg_color = color_from_int(bg_color);
+    level.spawn_point = (Vector2){.x = spawn_x, .y = spawn_y};
 
     // BACKGROUND
 
-    Tile bg_tiles[256] = {0};
+    Tile bg_tiles[1024] = {0};
     int bg_tile_count = 0;
 
     int bg_tile;
@@ -45,9 +47,9 @@ Level load_level(int n){
 
     // FOREGROUND
 
-    Tile fg_tiles[256] = {0};
+    Tile fg_tiles[1024] = {0};
     int fg_tile_count = 0;
-    
+
     int fg_tile;
     for(int i = 0; i < map_height; i++){
         for(int j = 0; j < map_width; j++){
@@ -60,7 +62,7 @@ Level load_level(int n){
 
     // OBJECTS
 
-    Object objects[256];
+    Object objects[1024];
     int object_count = 0;
 
     int num_objects;

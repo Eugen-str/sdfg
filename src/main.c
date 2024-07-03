@@ -14,6 +14,20 @@ void debug_info(char *logs){
     }
 }
 
+void update_camera_center(Camera2D *camera, Player *player, Level level){
+    camera->offset = (Vector2){ scrw/2.0f, scrh/2.0f };
+    camera->target = (Vector2){ player->rect.x, player->rect.y};
+    float minX = 0, minY = 0, maxX = level.width * 48, maxY = level.height * 48;
+
+    Vector2 max = GetWorldToScreen2D((Vector2){ maxX, maxY }, *camera);
+    Vector2 min = GetWorldToScreen2D((Vector2){ minX, minY }, *camera);
+
+    if (max.x < scrw) camera->offset.x = scrw - (max.x - scrw/2.0f);
+    if (max.y < scrh) camera->offset.y = scrh - (max.y - scrh/2.0f);
+    if (min.x > 0) camera->offset.x = scrw/2.0f - min.x;
+    if (min.y > 0) camera->offset.y = scrh/2.0f - min.y;
+}
+
 int main(){
     //SetTraceLogLevel(LOG_NONE);
     InitWindow(scrw, scrh, "sdfg");
@@ -21,37 +35,37 @@ int main(){
 
     Font iosevka = LoadFont("assets/iosevka.ttf");
 
-    //Level current_level = init_lvl_0(scrw, scrh);
     Level current_level = load_level(0);
     Player player = make_player(current_level);
     Camera2D camera = {0};
     camera.target = (Vector2){player.rect.x, player.rect.y};
+    camera.offset = (Vector2){ scrw/2.0f, scrh/2.0f };
+    camera.rotation = 0.0f;
+    camera.zoom = 1.0f;
 
     int frames = 0;
     bool debug = false;
     char logs[128];
     while(!WindowShouldClose()){
-        if(IsKeyPressed(KEY_ESCAPE)){
-            break;
-        }
         float delta = GetFrameTime();
-        BeginMode2D(camera);
+        update_camera_center(&camera, &player, current_level);
         BeginDrawing();
             ClearBackground(current_level.bg_color);
-            if(IsKeyPressed(KEY_F1)){
-                debug = !debug;
-            }
+            BeginMode2D(camera);
+                if(IsKeyPressed(KEY_F1)){
+                    debug = !debug;
+                }
 
-            if(debug){
-                debug_info(logs);
-                DrawText(logs, 50, 50, 25, RED);
-            }
-            draw_level_bg(current_level, iosevka, frames * delta, debug);
-            draw_player(player);
-            draw_level_fg(current_level, iosevka, frames * delta, debug);
-            update_player(&player, current_level, frames, delta);
+                if(debug){
+                    debug_info(logs);
+                    DrawText(logs, 50, 50, 25, RED);
+                }
+                draw_level_bg(current_level, iosevka, frames * delta, debug);
+                draw_player(player);
+                draw_level_fg(current_level, iosevka, frames * delta, debug);
+                update_player(&player, current_level, frames, delta);
+            EndMode2D();
         EndDrawing();
-        EndMode2D();
         frames++;
     }
 }
